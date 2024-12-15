@@ -4,7 +4,6 @@ import prismadb from "@/lib/prismadb";
 // 채팅방 목록 조회
 export async function GET() {
     try {
-        console.log('chat get!')
         const chatRooms = await prismadb.chatRoom.findMany({
             orderBy: { createdAt: "desc" },
         });

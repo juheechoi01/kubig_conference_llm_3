@@ -4,25 +4,37 @@ import prismadb from "@/lib/prismadb";
 
 interface ChatPageProps {
     params: {
-        chatroomId?: string;
+        chatroomId: string;
     };
 }
 
 const ChatRoomPage = async ({ params }: ChatPageProps) => {
-    const { chatroomId } = await params;
+    try {
+        const { chatroomId } = await params;
 
+        if (!chatroomId) {
+            return <div>Invalid Chatroom</div>;
+        }
 
-    // 데이터베이스에서 채팅방 조회 및 메시지 불러오기
-    const chatroom = await prismadb.chatRoom.findUnique({
-        where: { id: chatroomId },
-        include: {
-            messages: {
-                orderBy: { createdAt: "asc" }, // 메시지 정렬 (오래된 순서)
+        // 데이터베이스에서 채팅방 조회 및 메시지 불러오기
+        const chatroom = await prismadb.chatRoom.findUnique({
+            where: { id: chatroomId },
+            include: {
+                messages: {
+                    orderBy: { createdAt: "asc" }, // 메시지 정렬 (오래된 순서)
+                },
             },
-        },
-    });
+        });
 
-    return <ChatClient chatroom={chatroom} />;
+        if (!chatroom) {
+            return <div>Chatroom not found</div>;
+        }
+
+        return <ChatClient chatroom={chatroom} />;
+    } catch (error) {
+        console.error("Failed to fetch chatroom:", error);
+        return <div>Something went wrong</div>;
+    }
 };
 
 export default ChatRoomPage;

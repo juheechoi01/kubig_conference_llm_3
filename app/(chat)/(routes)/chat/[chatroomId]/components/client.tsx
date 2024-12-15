@@ -2,8 +2,7 @@
 
 import { ChatMessageProps } from "@/components/message";
 import { ChatRoom, Message } from "@prisma/client";
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
 
 import ChatMessages from "@/components/messages";
 import ChatForm from "@/components/chat-form";
@@ -18,7 +17,6 @@ interface ChatClientProps {
 }
 
 const ChatClient = ({ chatroom }: ChatClientProps) => {
-    const router = useRouter();
 
     const initialMessages =
         chatroom?.messages.map((msg) => ({
@@ -31,9 +29,85 @@ const ChatClient = ({ chatroom }: ChatClientProps) => {
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
+    // 데이터베이스에서 메시지를 불러옴
+    useEffect(() => {
+        const fetchMessages = async () => {
+            if (!chatroom?.id) return;
+
+            const res = await fetch(`/api/chat/${chatroom.id}/messages`);
+            const data = await res.json();
+
+            if (data.messages) {
+                setMessages(data.messages);
+            }
+        };
+
+        fetchMessages();
+    }, [chatroom?.id]);
+
+    // 메시지를 전송하고 저장하는 시점
+    const sendMessage = async (e: FormEvent) => {
+        e.preventDefault();
+        if (!input.trim()) return;
+
+        const userMessage: ChatMessageProps = { role: "user", content: input };
+
+        setMessages((prev) => [...prev, userMessage]);
+        setInput("");
+        setIsLoading(true);
+
+        // messages/route로 요청 전송
+        try {
+            console.log("sending req to messages/route");
+
+            const res = await fetch(`/api/chat/${chatroom?.id}/messages`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    input: input,
+                    chat_history: messages.map(({ role, content }) => ({
+                        role,
+                        content,
+                    })),
+                }),
+            });
+
+            if (!res.ok) {
+                console.error(
+                    "Server responded with an error:",
+                    res.status,
+                    await res.text()
+                );
+                throw new Error(`HTTP error! Status: ${res.status}`);
+            }
+
+            const data = await res.json().catch((error) => {
+                console.error("Failed to parse JSON:", error);
+                throw new Error("Invalid JSON response");
+            });
+
+            const systemMessage: ChatMessageProps = {
+                role: "system",
+                content: data.answer,
+            };
+
+            setMessages((prev) => [...prev, systemMessage]);
+
+            if (!chatroom?.id) {
+                console.error("Chatroom ID is missing");
+                return;
+            }
+        } catch (error) {
+            console.error("Failed to send message:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
-        <div className="flex flex-col h-full p-4 flex-1">
+        <div className="flex flex-col h-full mx-4 flex-1">
             <ChatMessages
                 chatroom={chatroom!}
                 isLoading={isLoading}
@@ -43,7 +117,7 @@ const ChatClient = ({ chatroom }: ChatClientProps) => {
                 isLoading={isLoading}
                 input={input}
                 handleInputChange={(e) => setInput(e.target.value)}
-                // onSubmit={sendMessage}
+                onSubmit={sendMessage}
             />
         </div>
     );
