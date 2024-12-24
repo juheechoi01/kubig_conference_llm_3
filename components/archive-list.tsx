@@ -1,11 +1,58 @@
-"use client"
+"use client";
 
-const ArchiveList = () => {
-  return (
-    <div>
-        archivelist
-    </div>
-  )
+import { useEffect, useState } from "react";
+import ArchiveMessage from "./archive-message";
+
+interface ArchivedMessage {
+    id: string;
+    content: string;
+    createdAt: string;
+    chatroomName: string;
 }
 
-export default ArchiveList
+const ArchiveList = () => {
+    const [archivedMessages, setArchivedMessages] = useState<ArchivedMessage[]>(
+        []
+    );
+
+    useEffect(() => {
+        const fetchArchivedMessages = async () => {
+            try {
+                const response = await fetch("/api/archive");
+                if (!response.ok) {
+                    throw new Error("Failed to fetch archived messages");
+                }
+
+                const data = await response.json();
+                setArchivedMessages(data);
+            } catch (error) {
+                console.error("Error fetching archived messages:", error);
+            }
+        };
+
+        fetchArchivedMessages();
+    }, []);
+
+    const handleDelete = (messageId: string) => {
+        setArchivedMessages((prev) =>
+            prev.filter((message) => message.id !== messageId)
+        );
+    };
+
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-5">
+            {archivedMessages.map((message) => (
+                <ArchiveMessage
+                    key={message.id}
+                    content={message.content}
+                    chatroomName={message.chatroomName}
+                    createdAt={message.createdAt}
+                    messageId={message.id}
+                    onDelete={handleDelete}
+                />
+            ))}
+        </div>
+    );
+};
+
+export default ArchiveList;

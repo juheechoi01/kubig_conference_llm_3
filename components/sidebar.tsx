@@ -1,20 +1,23 @@
 "use client";
-
 import { Inbox, PenBox, Settings, Sidebar } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import ChatroomList from "./chatroom-list";
 import { useRouter } from "next/navigation";
 import ConfirmModal from "./modal";
 
-interface ChatRoom {
-    id: string;
-    name: string;
-}
+import { ChatRoom } from "@prisma/client";
 
-const SideBar = () => {
+const SideBar = ({
+    chatrooms,
+    createChatroom,
+    deleteChatroom,
+}: {
+    chatrooms: ChatRoom[];
+    createChatroom: () => void;
+    deleteChatroom: (id: string) => void;
+}) => {
     const router = useRouter();
     const [isExpanded, setIsExpanded] = useState(false);
-    const [chatrooms, setChatrooms] = useState<ChatRoom[]>([]);
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedChatroomId, setSelectedChatroomId] = useState<string | null>(
         null
@@ -24,42 +27,7 @@ const SideBar = () => {
         setIsExpanded((prev) => !prev);
     };
 
-    const fetchChatrooms = async () => {
-        try {
-            const response = await fetch("/api/chat");
-            if (!response.ok) {
-                throw new Error("Failed to fetch chatrooms");
-            }
-            const data = await response.json();
-            setChatrooms(data);
-        } catch (error) {
-            console.error("Failed to fetch chatrooms:", error);
-        }
-    };
-
-    useEffect(() => {
-        fetchChatrooms();
-    }, []);
-
-    const createChatroom = async () => {
-        try {
-            const response = await fetch("/api/chat", {
-                method: "POST",
-                body: JSON.stringify({ name: "New Chat Room" }), // 기본 이름 설정
-                headers: { "Content-Type": "application/json" },
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to create chatroom");
-            }
-
-            const newChatroom: ChatRoom = await response.json();
-            setChatrooms((prev) => [...prev, newChatroom]);
-            router.push(`/chat/${newChatroom.id}`);
-        } catch (error) {
-            console.error("Error creating chatroom:", error);
-        }
-    };
+    // 채팅방 삭제 모달 열기/닫기
 
     const openDeleteModal = (id: string) => {
         setSelectedChatroomId(id);
@@ -71,27 +39,10 @@ const SideBar = () => {
         setModalOpen(false);
     };
 
-    const confirmDeleteChatroom = async () => {
-        if (!selectedChatroomId) return;
-
-        try {
-            const response = await fetch(`/api/chat/${selectedChatroomId}`, {
-                method: "DELETE",
-            });
-            if (!response.ok) {
-                throw new Error("Failed to delete chatroom");
-            }
-
-            setChatrooms(
-                (prev) =>
-                    prev.filter(
-                        (chatroom) => chatroom.id !== selectedChatroomId
-                    ) // 상태 갱신
-            );
-        } catch (error) {
-            console.error("Error deleting chatroom:", error);
-        } finally {
-            closeDeleteModal(); // 삭제 확인 모달 닫기
+    const confirmDeleteChatroom = () => {
+        if (selectedChatroomId) {
+            deleteChatroom(selectedChatroomId);
+            closeDeleteModal();
         }
     };
 
@@ -114,13 +65,13 @@ const SideBar = () => {
 
     return (
         <div
-            className="h-full hidden md:flex mt-[10] rounded-r-lg"
+            className="h-full hidden sm:flex mt-[10] rounded-r-lg"
             id="sidebar"
         >
             <div
                 className="bg-gradient-to-b from-[#c2dbf9] to-[#87bdff] space-y-4 flex flex-col text-primary rounded-r-lg w-[80px]"
                 style={{
-                    boxShadow: "2px 0 8px rgba(0, 0, 0, 0.2)", // 오른쪽으로 그림자
+                    boxShadow: "2px 0 8px rgba(0, 0, 0, 0.2)",
                 }}
             >
                 <div className="p-6 flex-col m-0 space-y-6 rounded-r-lg bg-transparent">
@@ -132,7 +83,7 @@ const SideBar = () => {
                         >
                             <Sidebar color="white" size={30} />
                         </button>
-                        <span className="absolute left-[40px] top-[15px] transform -translate-y-1/2 hidden group-hover:block bg-gray-800 text-white text-sm px-2 py-1 rounded-lg shadow-lg">
+                        <span className="absolute left-[40px] top-[15px] transform -translate-y-1/2 hidden group-hover:block bg-gray-800 text-white text-sm px-2 py-1 rounded-lg shadow-lg z-50">
                             {isExpanded ? "Open Chatlist" : "Close Chatlist"}
                         </span>
                     </div>
@@ -145,7 +96,7 @@ const SideBar = () => {
                         >
                             <PenBox color="white" size={30} />
                         </button>
-                        <span className="absolute left-[40px] top-[15px] transform -translate-y-1/2 hidden group-hover:block bg-gray-800 text-white text-sm px-2 py-1 rounded-lg shadow-lg">
+                        <span className="absolute left-[40px] top-[15px] transform -translate-y-1/2 hidden group-hover:block bg-gray-800 text-white text-sm px-2 py-1 rounded-lg shadow-lg z-50">
                             Add Chatroom
                         </span>
                     </div>
@@ -154,11 +105,14 @@ const SideBar = () => {
                     <div className="relative group">
                         <button
                             className="cursor-pointer"
-                            onClick={() => router.push("/archive")}
+                            onClick={() => {
+                                router.push("/archive");
+                                setIsExpanded(false); // Archive 버튼 클릭 시 사이드바 닫기
+                            }}
                         >
                             <Inbox color="white" size={30} />
                         </button>
-                        <span className="absolute left-[40px] top-[15px] transform -translate-y-1/2 hidden group-hover:block bg-gray-800 text-white text-sm px-2 py-1 rounded-lg shadow-lg">
+                        <span className="absolute left-[40px] top-[15px] transform -translate-y-1/2 hidden group-hover:block bg-gray-800 text-white text-sm px-2 py-1 rounded-lg shadow-lg z-50">
                             Archive
                         </span>
                     </div>
@@ -176,12 +130,12 @@ const SideBar = () => {
             </div>
             <div>
                 <div
-                    className={`bg-gradient-to-br from-[#dcecff] via-[#dcecff]  to-[#bedbff] overflow-y-auto h-full transition-all duration-500 ease-in-out ${
-                        isExpanded ? "w-[300px] p-6" : "w-0 p-0"
+                    className={`bg-gradient-to-br from-[#dcecff] via-[#dcecff]  to-[#bedbff] overflow-y-auto h-full transition-all duration-500 ease-in-out z-10 ${
+                        isExpanded ? "w-[300px] p-5" : "w-0 p-0"
                     } rounded-lg`}
                     style={{
-                        boxShadow: `inset 0 -5px 8px rgba(255, 255, 255, 0.8), 
-                                3px 0 8px rgba(0, 0, 0, 0.2)
+                        boxShadow: `inset 0 -5px 8px rgba(255, 255, 255, 0.8),
+                                    3px 0 8px rgba(0, 0, 0, 0.2)
                         `,
                     }}
                 >

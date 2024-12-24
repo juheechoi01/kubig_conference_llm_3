@@ -16,20 +16,26 @@ export interface ChatMessageProps {
     content?: string;
     isLoading?: boolean;
     src?: string;
+    chatroomId?: string;
+    chatroomName?: string;
 }
 
-const ChatMessage = ({ role, content = "", isLoading }: ChatMessageProps) => {
+const ChatMessage = ({
+    role,
+    content = "",
+    isLoading,
+    chatroomId,
+    chatroomName,
+}: ChatMessageProps) => {
     const { toast } = useToast();
     const { theme } = useTheme();
-    const [animatedContent, setAnimatedContent] = useState("");
-
-    const [typingIndex, setTypingIndex] = useState(0); // 현재 타이핑 중인 위치
 
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [dropdownVisible, setDropdownVisible] = useState(false);
 
     const dropdownRef = useRef<HTMLDivElement>(null);
 
+    // Dropdown 토글
     const toggleDropdown = () => {
         if (dropdownVisible) {
             setDropdownOpen(false);
@@ -39,6 +45,7 @@ const ChatMessage = ({ role, content = "", isLoading }: ChatMessageProps) => {
             setTimeout(() => setDropdownOpen(true), 0); // 바로 열기 시작
         }
     };
+
     const closeDropdown = () => {
         setDropdownOpen(false);
         setTimeout(() => setDropdownVisible(false), 300);
@@ -60,26 +67,6 @@ const ChatMessage = ({ role, content = "", isLoading }: ChatMessageProps) => {
         };
     }, []);
 
-    useEffect(() => {
-        if (role !== "system") {
-            // 유저 메시지에는 타이핑 효과를 적용하지 않음, 로딩 중일 경우 초기화
-            setAnimatedContent("");
-            setTypingIndex(0);
-            return;
-        }
-
-        if (content && typingIndex < content.length) {
-            const timer = setTimeout(() => {
-                setAnimatedContent((prev) => prev + content[typingIndex]);
-                setTypingIndex((prev) => prev + 1);
-            }, 30); // 타이핑 속도 조정 (30ms 간격)
-
-            return () => clearTimeout(timer); // 타이머 정리
-        } else {
-            setAnimatedContent(content || "");
-        }
-    }, [role, content, typingIndex, isLoading]);
-
     const onCopy = () => {
         if (!content) {
             return;
@@ -89,6 +76,37 @@ const ChatMessage = ({ role, content = "", isLoading }: ChatMessageProps) => {
         toast({
             description: "Messages copied to clipboard",
         });
+    };
+
+    const onArchive = async () => {
+        try {
+            const response = await fetch("/api/archive", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    content,
+                    chatroomId,
+                    chatroomName,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to archive message");
+            }
+
+            toast({
+                description: "Message archived!",
+            });
+        } catch (error) {
+            console.error("Error archiving message:", error);
+            toast({
+                description: "Failed to archive message",
+                variant: "destructive",
+            });
+            return;
+        }
     };
 
     const formatContent = (text: string) => {
@@ -103,21 +121,25 @@ const ChatMessage = ({ role, content = "", isLoading }: ChatMessageProps) => {
     return (
         <div
             className={cn(
-                "group flex items-start gap-x-3 py-6 w-full",
-                role === "user" && "justify-end"
+                "group flex items-start gap-x-3 py-6 w-full transition-transform duration-500 ease-in-out",
+                role === "user" ? "justify-end" : "justify-start",
+                "animate-message-up"
             )}
         >
             {role !== "user" && <BotAvatar />}
-            <div className="mt-[3] rounded-b-md px-4 py-3 max-w-sm text-sm bg-primary/10">
+            <div
+                className={cn(
+                    "mt-[3] rounded-b-md px-4 py-3 max-w-sm text-sm bg-primary/10 transition-all duration-300",
+                    "animate-expand-height"
+                )}
+            >
                 {isLoading ? (
                     <BeatLoader
                         size={5}
                         color={theme === "light" ? "black" : "white"}
                     />
-                ) : role === "system" ? (
-                    formatContent(animatedContent)
                 ) : (
-                    content
+                    formatContent(content || "")
                 )}
             </div>
 
@@ -125,7 +147,7 @@ const ChatMessage = ({ role, content = "", isLoading }: ChatMessageProps) => {
 
             {role !== "user" && !isLoading && (
                 <div className="relative" ref={dropdownRef}>
-                    {/* MoreVertical Button */}
+                    {/* Dropdown 버튼 */}
                     <Button
                         onClick={(e) => {
                             e.stopPropagation(); // 클릭 이벤트 전파 방지
@@ -138,7 +160,7 @@ const ChatMessage = ({ role, content = "", isLoading }: ChatMessageProps) => {
                         <MoreVertical />
                     </Button>
 
-                    {/* Dropdown Menu */}
+                    {/* Dropdown 메뉴 */}
                     {dropdownVisible && (
                         <div
                             id="dropdown"
@@ -166,9 +188,7 @@ const ChatMessage = ({ role, content = "", isLoading }: ChatMessageProps) => {
 
                             <button
                                 onClick={() => {
-                                    toast({
-                                        description: "Message archived!",
-                                    });
+                                    onArchive();
                                     closeDropdown();
                                 }}
                                 className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

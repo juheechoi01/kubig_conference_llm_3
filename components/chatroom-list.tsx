@@ -1,11 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { TrashIcon } from "lucide-react";
+import { TrashIcon, MoreVertical, Pencil } from "lucide-react";
 
-interface ChatRoom {
-    id: string;
-    name: string;
-}
+import Dropdown from "./dropdown-menu";
+
+import { ChatRoom } from "@prisma/client";
 
 interface ChatroomListProps {
     chatrooms: ChatRoom[];
@@ -19,22 +18,43 @@ const ChatroomList: React.FC<ChatroomListProps> = ({
     onChatroomClick,
 }) => {
     const router = useRouter();
-    const pathname = usePathname(); // 현재 경로 가져오기
+    const pathname = usePathname();
+    const [activeMenu, setActiveMenu] = useState<string | null>(null);
+    const [dropdownPosition, setDropdownPosition] = useState<{
+        top: number;
+        left: number;
+    } | null>(null);
+
+    const handleToggleMenu = (event: React.MouseEvent, id: string) => {
+        event.stopPropagation();
+
+        if (activeMenu === id) {
+            setActiveMenu(null);
+            setDropdownPosition(null);
+        } else {
+            const rect = (event.target as HTMLElement).getBoundingClientRect();
+            setActiveMenu(id);
+            setDropdownPosition({
+                top: rect.bottom + window.scrollY,
+                left: rect.left + window.scrollX,
+            });
+        }
+    };
 
     return (
-        <div className="space-y-2 overflow-y-auto max-h-[400px]">
+        <div className="space-y-2 max-h-[400px]">
             {chatrooms.length === 0 ? (
                 <p className="white align-middle">No chatrooms available</p>
             ) : (
                 chatrooms.map((chatroom) => {
-                    const isActive = pathname === `/chat/${chatroom.id}`; // 현재 경로와 비교
+                    const isActive = pathname === `/chat/${chatroom.id}`;
                     return (
                         <div
                             key={chatroom.id}
-                            className={`flex justify-between items-center cursor-pointer p-2 px-3 rounded ${
+                            className={`relative flex justify-between items-center cursor-pointer py-2 px-3 rounded ${
                                 isActive
                                     ? "bg-[#b2d5ff] font-bold"
-                                    : "hover:bg-[#c6dfff]"
+                                    : "hover:bg-[#ebf3ff]"
                             }`}
                             onClick={() => {
                                 if (!isActive) {
@@ -43,19 +63,55 @@ const ChatroomList: React.FC<ChatroomListProps> = ({
                                 onChatroomClick();
                             }}
                         >
-                            <span>{chatroom.name}</span>
-                            {/* Trash Icon */}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation(); // 클릭 이벤트 전파 방지
-                                    if (onDeleteChatroom) {
-                                        onDeleteChatroom(chatroom.id);
+                            <span className="text-[15px]">{chatroom.name}</span>
+                            <div className="relative">
+                                <button
+                                    className="text-gray-500 hover:text-gray-400 ml-2"
+                                    onClick={(e) =>
+                                        handleToggleMenu(e, chatroom.id)
                                     }
-                                }}
-                                className="text-gray-400 hover:text-red-500 ml-2 py-2"
-                            >
-                                <TrashIcon size={20} />
-                            </button>
+                                >
+                                    <MoreVertical size={22} />
+                                </button>
+                                
+                                {/* Dropdown Menu */}
+                                {activeMenu === chatroom.id &&
+                                    dropdownPosition && (
+                                        <Dropdown
+                                            isOpen={activeMenu === chatroom.id}
+                                            position={dropdownPosition}
+                                            onClose={() => setActiveMenu(null)}
+                                        >
+                                            <button
+                                                onClick={() => {
+                                                    if (onDeleteChatroom) {
+                                                        onDeleteChatroom(
+                                                            chatroom.id
+                                                        );
+                                                    }
+                                                    setActiveMenu(null); // 메뉴 닫기
+                                                }}
+                                                className="flex items-center w-full px-4 py-2 text-sm text-red-500 hover:bg-red-50"
+                                            >
+                                                <TrashIcon
+                                                    size={16}
+                                                    className="mr-2"
+                                                />
+                                                Delete
+                                            </button>
+                                            <button
+                                                className="flex items-center w-full px-4 py-2 text-sm text-blue-500 hover:bg-blue-50"
+                                                onClick={() => {}}
+                                            >
+                                                <Pencil
+                                                    size={16}
+                                                    className="mr-2"
+                                                />
+                                                Change Name
+                                            </button>
+                                        </Dropdown>
+                                    )}
+                            </div>
                         </div>
                     );
                 })

@@ -6,6 +6,7 @@ import { FormEvent, useEffect, useState } from "react";
 
 import ChatMessages from "@/components/messages";
 import ChatForm from "@/components/chat-form";
+import { useRouter } from "next/navigation";
 
 interface ChatClientProps {
     chatroom?: ChatRoom & {
@@ -17,6 +18,7 @@ interface ChatClientProps {
 }
 
 const ChatClient = ({ chatroom }: ChatClientProps) => {
+    const router = useRouter();
 
     const initialMessages =
         chatroom?.messages.map((msg) => ({
@@ -35,6 +37,18 @@ const ChatClient = ({ chatroom }: ChatClientProps) => {
             if (!chatroom?.id) return;
 
             const res = await fetch(`/api/chat/${chatroom.id}/messages`);
+
+            if (res.status === 404) {
+                // 채팅방이 없으면 메인 페이지로 리다이렉트
+                router.push("/");
+                return;
+            }
+
+            if (!res.ok) {
+                console.error("Failed to fetch messages");
+                return;
+            }
+
             const data = await res.json();
 
             if (data.messages) {
@@ -43,7 +57,7 @@ const ChatClient = ({ chatroom }: ChatClientProps) => {
         };
 
         fetchMessages();
-    }, [chatroom?.id]);
+    }, [chatroom?.id, router]);
 
     // 메시지를 전송하고 저장하는 시점
     const sendMessage = async (e: FormEvent) => {

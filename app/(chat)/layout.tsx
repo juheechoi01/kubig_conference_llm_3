@@ -1,5 +1,4 @@
-import NavBar from "@/components/navbar";
-import SideBar from "@/components/sidebar";
+import Bars from "@/components/bars";
 import { Metadata } from "next";
 import React from "react";
 
@@ -11,14 +10,9 @@ export const metadata: Metadata = {
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
     return (
         <div className="h-full w-full">
-            <div className="fixed">
-                <NavBar />
-            </div>
+            <Bars />
 
-            <div className="md:flex mt-[72px] flex-col fixed inset-y-0">
-                <SideBar />
-            </div>
-            <main className="md:pl-[90] h-full w-full pt-[72]"> {children}</main>
+            <main className="sm:pl-[90] h-full w-full pt-[72]">{children}</main>
         </div>
     );
 };

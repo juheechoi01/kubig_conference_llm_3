@@ -24,6 +24,8 @@ model ChatRoom {
   updatedAt   DateTime   @updatedAt
 
   messages    Message[]  
+
+  ArchivedMessage ArchivedMessage[]
 }
 
 model Message {
@@ -34,6 +36,19 @@ model Message {
   updatedAt   DateTime   @updatedAt
 
   chatroomId  String     
+
+  chatRoom    ChatRoom   @relation(fields: [chatroomId], references: [id], onDelete: Cascade) 
+
+  @@index([chatroomId])
+}
+
+model ArchivedMessage {
+  id          String     @id @default(uuid())
+  content     String     @db.Text
+  createdAt   DateTime   @default(now())
+  chatroomId  String    
+  chatroomName String 
+  
 
   chatRoom    ChatRoom   @relation(fields: [chatroomId], references: [id], onDelete: Cascade) 
 

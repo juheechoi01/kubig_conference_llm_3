@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import prismadb from "@/lib/prismadb";
+import { ChatRoom } from "@prisma/client";
 
 // 채팅방 목록 조회
 export async function GET() {
     try {
-        const chatRooms = await prismadb.chatRoom.findMany({
+        const chatRooms: ChatRoom[] = await prismadb.chatRoom.findMany({
             orderBy: { createdAt: "desc" },
         });
 

@@ -10,38 +10,30 @@ interface ChatMessagesProps {
     chatroom: ChatRoom;
 }
 
-const ChatMessages = ({ messages = [], isLoading }: ChatMessagesProps) => {
+const ChatMessages = ({
+    messages = [],
+    isLoading,
+    chatroom,
+}: ChatMessagesProps) => {
     const scrollRef = useRef<ElementRef<"div">>(null);
 
     // Fake loading 상태
     const [fakeLoading, setFakeLoading] = useState(messages.length === 0);
 
-    // 이전 메시지와 새 메시지 인덱스 추적
-    const [prevMessages, setPrevMessages] = useState<ChatMessageProps[]>([]);
-    const [newMessageIndex, setNewMessageIndex] = useState<number | null>(null);
-
     // Fake loading 초기화
     useEffect(() => {
-        const timeout = setTimeout(() => {
-            setFakeLoading(false);
-        }, 300);
+        if (fakeLoading) {
+            const timeout = setTimeout(() => {
+                setFakeLoading(false);
+            }, 250);
 
-        return () => {
-            clearTimeout(timeout);
-        };
-    }, []);
+            return () => {
+                clearTimeout(timeout);
+            };
+        }
+    }, [fakeLoading]);
 
     // 새 메시지 식별
-    useEffect(() => {
-        if (messages.length > prevMessages.length) {
-            const newIndex = prevMessages.length; // 새 메시지의 시작 인덱스
-            setNewMessageIndex(newIndex);
-        } else {
-            setNewMessageIndex(null);
-        }
-
-        setPrevMessages(messages); // 현재 메시지 상태 저장
-    }, [messages]);
 
     // 스크롤 자동 이동
     useEffect(() => {
@@ -63,6 +55,8 @@ const ChatMessages = ({ messages = [], isLoading }: ChatMessagesProps) => {
                     role={message.role}
                     content={message.content}
                     isLoading={index === 0 ? fakeLoading : undefined} // 첫 메시지만 로딩 효과
+                    chatroomId={chatroom.id}
+                    chatroomName={chatroom.name}
                 />
             ))}
 
