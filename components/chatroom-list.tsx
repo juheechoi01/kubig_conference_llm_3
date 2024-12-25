@@ -9,22 +9,26 @@ import { ChatRoom } from "@prisma/client";
 interface ChatroomListProps {
     chatrooms: ChatRoom[];
     onDeleteChatroom?: (id: string) => void;
+    onRenameChatroom?: (id: string) => void;
     onChatroomClick: () => void;
 }
 
 const ChatroomList: React.FC<ChatroomListProps> = ({
     chatrooms,
     onDeleteChatroom,
+    onRenameChatroom,
     onChatroomClick,
 }) => {
     const router = useRouter();
     const pathname = usePathname();
+
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
     const [dropdownPosition, setDropdownPosition] = useState<{
         top: number;
         left: number;
     } | null>(null);
 
+    // 메뉴 여닫기
     const handleToggleMenu = (event: React.MouseEvent, id: string) => {
         event.stopPropagation();
 
@@ -73,7 +77,7 @@ const ChatroomList: React.FC<ChatroomListProps> = ({
                                 >
                                     <MoreVertical size={22} />
                                 </button>
-                                
+
                                 {/* Dropdown Menu */}
                                 {activeMenu === chatroom.id &&
                                     dropdownPosition && (
@@ -101,7 +105,14 @@ const ChatroomList: React.FC<ChatroomListProps> = ({
                                             </button>
                                             <button
                                                 className="flex items-center w-full px-4 py-2 text-sm text-blue-500 hover:bg-blue-50"
-                                                onClick={() => {}}
+                                                onClick={() => {
+                                                    if (onRenameChatroom) {
+                                                        onRenameChatroom(
+                                                            chatroom.id
+                                                        );
+                                                    }
+                                                    setActiveMenu(null);
+                                                }}
                                             >
                                                 <Pencil
                                                     size={16}

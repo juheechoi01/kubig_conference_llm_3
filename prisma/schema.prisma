@@ -17,14 +17,29 @@ enum Role {
   system
 }
 
+model User {
+  id          String     @id @default(uuid())
+  email       String     @unique
+  password    String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  chatRooms   ChatRoom[]
+  messages    Message[]
+  archivedMessages ArchivedMessage[]
+
+}
+
 model ChatRoom {
   id          String     @id @default(uuid()) 
   name        String     @default("New Chat Room") 
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  messages    Message[]  
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  messages    Message[]  
   ArchivedMessage ArchivedMessage[]
 }
 
@@ -35,9 +50,11 @@ model Message {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  chatroomId  String     
-
+  chatroomId  String    
   chatRoom    ChatRoom   @relation(fields: [chatroomId], references: [id], onDelete: Cascade) 
+
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([chatroomId])
 }
@@ -46,11 +63,14 @@ model ArchivedMessage {
   id          String     @id @default(uuid())
   content     String     @db.Text
   createdAt   DateTime   @default(now())
+
   chatroomId  String    
-  chatroomName String 
-  
+  chatroomName String   
 
   chatRoom    ChatRoom   @relation(fields: [chatroomId], references: [id], onDelete: Cascade) 
+
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([chatroomId])
 }

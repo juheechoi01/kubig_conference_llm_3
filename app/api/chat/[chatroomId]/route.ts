@@ -78,7 +78,7 @@ export async function PATCH(
     { params }: { params: { chatroomId: string } }
 ) {
     try {
-        const { chatroomId } = params;
+        const { chatroomId } = await params;
 
         if (!chatroomId) {
             return NextResponse.json(

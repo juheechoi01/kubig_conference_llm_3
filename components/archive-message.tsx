@@ -92,8 +92,8 @@ const ArchiveMessage = ({
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
                     onConfirm={handleDelete}
-                    title="채팅방 삭제"
-                    description="정말로 이 채팅방을 삭제하시겠습니까?"
+                    title="아카이브 메시지 삭제"
+                    description="해당 메시지를 삭제합니다"
                 />
             )}
         </div>

@@ -68,18 +68,45 @@ const Bars = () => {
         }
     };
 
+    // 채팅방 이름 변경
+    const handleRenameChatroom = async (id: string, newName: string) => {
+        try {
+            const response = await fetch(`/api/chat/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: newName }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to rename chatroom");
+            }
+
+            const updatedChatroom: ChatRoom = await response.json();
+
+            // 상태 업데이트
+            setChatrooms((prev) =>
+                prev.map((chatroom) =>
+                    chatroom.id === id ? updatedChatroom : chatroom
+                )
+            );
+        } catch (error) {
+            console.error("Error renaming chatroom:", error);
+        }
+    };
+
     // 초기 데이터 로드
     useEffect(() => {
         fetchChatrooms();
     }, []);
 
     return (
-        <div>
+        <div className="z-10">
             <div className="fixed">
                 <NavBar
                     chatrooms={chatrooms}
                     createChatroom={createChatroom}
                     deleteChatroom={deleteChatroom}
+                    renameChatroom={handleRenameChatroom}
                 />
             </div>
 
@@ -88,6 +115,7 @@ const Bars = () => {
                     chatrooms={chatrooms}
                     createChatroom={createChatroom}
                     deleteChatroom={deleteChatroom}
+                    renameChatroom={handleRenameChatroom}
                 />
             </div>
         </div>

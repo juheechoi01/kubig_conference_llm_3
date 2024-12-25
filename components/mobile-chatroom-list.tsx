@@ -7,12 +7,14 @@ import { ChatRoom } from "@prisma/client";
 interface MobileChatroomListProps {
     chatrooms: ChatRoom[];
     onDeleteChatroom?: (id: string) => void;
+    onRenameChatroom?: (chatroom: ChatRoom) => void;
     onChatroomClick: () => void;
 }
 
 const MobileChatroomList: React.FC<MobileChatroomListProps> = ({
     chatrooms,
     onDeleteChatroom,
+    onRenameChatroom,
     onChatroomClick,
 }) => {
     const router = useRouter();
@@ -53,7 +55,14 @@ const MobileChatroomList: React.FC<MobileChatroomListProps> = ({
                                     >
                                         <TrashIcon size={22} />
                                     </button>
-                                    <button className="text-gray-500 hover:text-blue-400 ml-2">
+                                    <button
+                                        className="text-gray-500 hover:text-blue-400 ml-2"
+                                        onClick={() => {
+                                            if (onRenameChatroom) {
+                                                onRenameChatroom(chatroom);
+                                            }
+                                        }}
+                                    >
                                         <Pencil size={22} />
                                     </button>
                                 </div>

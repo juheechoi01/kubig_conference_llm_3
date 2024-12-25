@@ -1,4 +1,5 @@
 "use client";
+
 import { Inbox, PenBox, Settings, Sidebar } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import ChatroomList from "./chatroom-list";
@@ -6,20 +7,29 @@ import { useRouter } from "next/navigation";
 import ConfirmModal from "./modal";
 
 import { ChatRoom } from "@prisma/client";
+import RenameModal from "./rename-modal";
 
-const SideBar = ({
-    chatrooms,
-    createChatroom,
-    deleteChatroom,
-}: {
+interface SideBarProps {
     chatrooms: ChatRoom[];
     createChatroom: () => void;
     deleteChatroom: (id: string) => void;
+    renameChatroom: (id: string, newName: string) => void;
+}
+
+const SideBar: React.FC<SideBarProps> = ({
+    chatrooms,
+    createChatroom,
+    deleteChatroom,
+    renameChatroom,
 }) => {
     const router = useRouter();
     const [isExpanded, setIsExpanded] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
+    const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
     const [selectedChatroomId, setSelectedChatroomId] = useState<string | null>(
+        null
+    );
+    const [selectedChatroom, setSelectedChatroom] = useState<ChatRoom | null>(
         null
     );
 
@@ -28,7 +38,6 @@ const SideBar = ({
     };
 
     // 채팅방 삭제 모달 열기/닫기
-
     const openDeleteModal = (id: string) => {
         setSelectedChatroomId(id);
         setModalOpen(true);
@@ -46,10 +55,35 @@ const SideBar = ({
         }
     };
 
+    // RenameModal 열기/닫기
+    const openRenameModal = (chatroom: ChatRoom) => {
+        setSelectedChatroom(chatroom);
+        setIsRenameModalOpen(true);
+    };
+
+    const closeRenameModal = () => {
+        setIsRenameModalOpen(false);
+        setSelectedChatroom(null);
+    };
+
+    const handleRenameConfirm = (newName: string) => {
+        if (selectedChatroom) {
+            renameChatroom(selectedChatroom.id, newName);
+            closeRenameModal();
+        }
+    };
+
     // 외부 클릭 시 isExpanded를 false로 설정
     const handleOutsideClick = (event: MouseEvent) => {
         const sidebar = document.getElementById("sidebar");
-        if (sidebar && !sidebar.contains(event.target as Node)) {
+        const renameModal = document.getElementById("rename-modal");
+
+        if (
+            sidebar &&
+            !sidebar.contains(event.target as Node) &&
+            (!renameModal || !renameModal.contains(event.target as Node)) &&
+            !isRenameModalOpen // RenameModal 열려 있으면 닫지 않음
+        ) {
             setIsExpanded(false);
         }
     };
@@ -61,17 +95,19 @@ const SideBar = ({
             // 컴포넌트 언마운트 시 이벤트 리스너 제거
             document.removeEventListener("click", handleOutsideClick);
         };
-    }, []);
+    }, [isRenameModalOpen]);
 
     return (
         <div
             className="h-full hidden sm:flex mt-[10] rounded-r-lg"
             id="sidebar"
+            style={{ zIndex: 1 }}
         >
             <div
                 className="bg-gradient-to-b from-[#c2dbf9] to-[#87bdff] space-y-4 flex flex-col text-primary rounded-r-lg w-[80px]"
                 style={{
                     boxShadow: "2px 0 8px rgba(0, 0, 0, 0.2)",
+                    zIndex: 1,
                 }}
             >
                 <div className="p-6 flex-col m-0 space-y-6 rounded-r-lg bg-transparent">
@@ -143,6 +179,11 @@ const SideBar = ({
                         <ChatroomList
                             chatrooms={chatrooms}
                             onDeleteChatroom={openDeleteModal}
+                            onRenameChatroom={(id) =>
+                                openRenameModal(
+                                    chatrooms.find((c) => c.id === id)!
+                                )
+                            }
                             onChatroomClick={() => setIsExpanded(false)}
                         />
                     )}
@@ -156,6 +197,17 @@ const SideBar = ({
                 title="채팅방 삭제"
                 description="정말로 이 채팅방을 삭제하시겠습니까?"
             />
+
+            {/* RenameModal */}
+            {isRenameModalOpen && selectedChatroom && (
+                <RenameModal
+                    id="rename-modal"
+                    isRenameOpen={isRenameModalOpen}
+                    onClose={closeRenameModal}
+                    onConfirm={handleRenameConfirm}
+                    initialName={selectedChatroom.name}
+                />
+            )}
         </div>
     );
 };

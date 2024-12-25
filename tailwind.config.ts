@@ -57,16 +57,20 @@ export default {
                 sm: "calc(var(--radius) - 4px)",
             },
             keyframes: {
-                messageUp:{
+                messageUp: {
                     "0%": { transform: "translateY(30%)", opacity: "0" },
                 },
-                archiveUp:{
+                archiveUp: {
                     "0%": { transform: "translateY(40%)", opacity: "0" },
+                },
+                imageUp: {
+                    "0%": { transform: "translateY(20%)", opacity: "0" },
                 },
             },
             animation: {
                 "message-up": "messageUp 2s ease-out",
-                "archive-up": "archiveUp 1s ease"
+                "archive-up": "archiveUp 1s ease",
+                "image-up": "imageUp 1s ease",
             },
         },
     },
