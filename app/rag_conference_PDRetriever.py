@@ -104,7 +104,7 @@ qa_prompt = ChatPromptTemplate.from_messages(
     [
         ('system', qa_system_prompt),
         MessagesPlaceholder('chat_history'),
-        ('human','{input}'),
+        ('human','{input}'+' 내가 질문한 내용을 시간순으로 정리해서 알려줘.'),
     ]
 )
 
