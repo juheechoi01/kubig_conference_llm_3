@@ -14,7 +14,69 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain.storage._lc_store import create_kv_docstore
 from langchain.storage.file_system import LocalFileStore
 from langchain.retrievers.multi_query import MultiQueryRetriever
+from langchain_community.document_transformers import LongContextReorder
+from langchain.text_splitter import TextSplitter
+from langchain.schema import Document
 
+class CustomColumnSplitter(TextSplitter):
+    def string_to_dict(self, input_string):
+        """
+        Convert a given string with key-value pairs separated by newlines into a dictionary.
+        """
+        result_dict = {}
+        for line in input_string.split("\n"):
+            if ": " in line:  # Ensure valid key-value format
+                key, value = line.split(": ", 1)  # Split only on the first occurrence of ": "
+                result_dict[key.strip()] = value.strip()
+        return result_dict
+
+    def split_text(self, text):
+        """
+        text를 열 데이터로 분리하여 문서를 생성합니다.
+        """
+        # 텍스트를 딕셔너리로 변환 (CSV 행 형태로 가정)
+        row_data = self.string_to_dict(text)  # 문자열을 딕셔너리로 변환 (Document에서 가져온 데이터)
+
+        # 열 기준으로 나누기
+        doc1 = {
+            "회의날짜": row_data.get("회의날짜"),
+            "국회_대": row_data.get("국회_대"),
+            "회의명": row_data.get("회의명"),
+            "회수": row_data.get("회수"),
+            "차수": row_data.get("차수"),
+            "안건": row_data.get("안건"),
+            "법안": row_data.get("법안"),
+        }
+        doc2 = {
+            "질문자_이름": row_data.get("질문자_이름"),
+            "질문": row_data.get("질문"),
+            "질문_키워드": row_data.get("질문_키워드"),
+        }
+        doc3 = {
+            "답변자_이름": row_data.get("답변자_이름"),
+            "문맥(context)": row_data.get("문맥(context)"),
+            "실제 답변": row_data.get("실제 답변"),
+            "답변_키워드": row_data.get("답변_키워드"),
+        }
+
+        # 반환할 문서 리스트
+        return [doc1, doc2, doc3]
+
+    def split_documents(self, documents):
+        split_docs = []
+        for document in documents:
+            # 각 Document의 내용을 split_text로 처리
+            sub_docs = self.split_text(document.page_content)
+            for sub_doc in sub_docs:
+                # 새롭게 분리된 데이터를 Document 객체로 변환
+                split_docs.append(
+                    Document(
+                        page_content=str(sub_doc),  # 문자열로 변환
+                        metadata=document.metadata,  # 기존 문서의 메타데이터 유지
+                    )
+                )
+        return split_docs
+    
 if "id" not in st.session_state:
     st.session_state.id = uuid.uuid4()
     st.session_state.file_cache = {}
@@ -31,9 +93,10 @@ vectorstore = Chroma(
     collection_name="split_parents", embedding_function=UpstageEmbeddings(model="embedding-passage"), 
     persist_directory='child_DB(Chroma, Upstage, Custom2)') # DB_PATH
 
-child_splitter = RecursiveCharacterTextSplitter(chunk_size=400)
+child_splitter = CustomColumnSplitter()
 
 chat = ChatUpstage()
+llm = ChatOpenAI()
 
 # LocalFileStore 로드
 fs = LocalFileStore('./parent_fs_chroma_Upstage_Custom2')
@@ -47,8 +110,7 @@ child_splitter=child_splitter,
 search_kwargs={'k':5})
 
 # MultiQueryRetriever 로드
-retriever = MultiQueryRetriever.from_llm(
-    retriever=retriever, llm=chat)
+retriever = MultiQueryRetriever.from_llm(retriever=retriever, llm=chat)
 
 # 1) 챗봇에 '기억'을 입히기 위한 첫번째 단계
 
@@ -60,8 +122,6 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 # 영어 버전
 contextualize_q_system_prompt = "When there are older conversations and more recent user questions, these questions may be related to previous conversations. In this case, change the question to a question that can be understood independently without needing to know the content of the conversation. You don't have to answer the question, just reformulate it if necessary or leave it as is."
 
-# 한글 버전
-# contextualize_q_system_prompt = "이전 대화 내용과 최신 사용자 질문이 있을 때, 이 질문이 이전 대화 내용과 관련이 있을 수 있습니다. 이런 경우, 대화 내용을 알 필요 없이 독립적으로 이해할 수 있는 질문으로 바꾸세요. 질문에 답할 필요는 없고, 필요하다면 그저 다시 구성하거나 그대로 두세요."
 
 # MessagePlaceHolder: 'chat_history' 입력 키를 사용하여 이전 메세지 기록들을 프롬프트에 포함시킴. 
 # 즉, 프롬프트, 메세지 기록(문맥 정보), 사용자의 질문으로 프롬프트가 구성됨.
@@ -93,28 +153,21 @@ DO NOT TRY TO MAKE UP AN ANSWER:
 [You MUST answer only based on this context.]
 Context: {context} """
 
-# qa_system_prompt = """
-# 질문-답변 업무를 돕는 보조원입니다.
-# 질문에 답하기 위해 검색된 내용을 사용하세요.
-# 답을 모르면 모른다고 말하세요.
-# 답변은 구체적으로 최신 정보부터 시간의 흐름에 따라 작성해주세요. 이건 의무사항입니다.
-# 답변할 때 metadata에 있는 source를 함께 제공해주세요.
-# {context} """
 
 qa_prompt = ChatPromptTemplate.from_messages(
     [
         ('system', qa_system_prompt),
         MessagesPlaceholder('chat_history'),
-        ('human','{input}'+'답변은 제시된 Context에만 기반해 구체적으로 작성해줘. 최신 정보부터 시간의 흐름에 따라 작성해줘.'),
+        ('human','{input}' + '답변은 제시된 Context에만 기반해 구체적으로 작성해줘. 최신 정보부터 시간의 흐름에 따라 작성해줘.'),
     ]
 )
 
 question_answer_chain = create_stuff_documents_chain(chat, qa_prompt) # chat
 
+
 # 결과값은 input, chat_history, context, answer 포함함.
 rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
 # history_aware_retriever 대신 일반 retriever로 다시 시도
-
 
 # 웹사이트 제목
 st.title("국회 회의록 기반 챗봇 서비스 :orange[NaraRAG] 📜⚖️")
