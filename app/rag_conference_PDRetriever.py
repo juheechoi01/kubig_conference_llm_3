@@ -90,7 +90,6 @@ DO NOT TRY TO MAKE UP AN ANSWER:
  - If the answer to the question cannot be determined from the context alone, say "I cannot determine the answer to that.".
  - If the context is empty, just say "I do not know the answer to that.".
 
-[You MUST answer only based on this context.]
 Context: {context} """
 
 
