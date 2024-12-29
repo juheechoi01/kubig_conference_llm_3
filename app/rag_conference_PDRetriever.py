@@ -90,21 +90,15 @@ DO NOT TRY TO MAKE UP AN ANSWER:
  - If the answer to the question cannot be determined from the context alone, say "I cannot determine the answer to that.".
  - If the context is empty, just say "I do not know the answer to that.".
 
+[You MUST answer only based on this context.]
 Context: {context} """
 
-# qa_system_prompt = """
-# 질문-답변 업무를 돕는 보조원입니다.
-# 질문에 답하기 위해 검색된 내용을 사용하세요.
-# 답을 모르면 모른다고 말하세요.
-# 답변은 구체적으로 최신 정보부터 시간의 흐름에 따라 작성해주세요. 이건 의무사항입니다.
-# 답변할 때 metadata에 있는 source를 함께 제공해주세요.
-# {context} """
 
 qa_prompt = ChatPromptTemplate.from_messages(
     [
         ('system', qa_system_prompt),
         MessagesPlaceholder('chat_history'),
-        ('human','{input}'+' 답변은 구체적으로 최신 정보부터 시간의 흐름에 따라 작성해줘. 그리고 답변할 때 metdata에 있는 source를 함께 제공해줘'),
+        ('human','{input}'+' 답변은 제시된 Context에만 기반해 구체적으로 작성해줘. 최신 정보부터 시간의 흐름에 따라 작성해줘.'),
     ]
 )
 
@@ -112,8 +106,6 @@ question_answer_chain = create_stuff_documents_chain(chat, qa_prompt) # chat
 
 # 결과값은 input, chat_history, context, answer 포함함.
 rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
-# history_aware_retriever 대신 일반 retriever로 다시 시도
-
 
 # 웹사이트 제목
 st.title("국회 회의록 기반 챗봇 서비스 :orange[NaraRAG] 📜⚖️")
