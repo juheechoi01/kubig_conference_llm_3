@@ -47,7 +47,7 @@ const Bars = () => {
                 />
             </div>
 
-            <div className="md:flex mt-[72px] flex-col fixed inset-y-0">
+            <div className="mt-[72px] fixed inset-y-0">
                 <SideBar
                     chatrooms={chatrooms}
                     createChatroom={handleCreateChatroom}

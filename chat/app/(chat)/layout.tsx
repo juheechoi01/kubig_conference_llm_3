@@ -14,7 +14,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
             <div className="h-full w-full">
                 <Bars />
 
-                <main className="sm:pl-[90] h-full w-full pt-[72]">
+                <main className="md:pl-[90] h-full w-full pt-[72] ease">
                     {children}
                 </main>
             </div>

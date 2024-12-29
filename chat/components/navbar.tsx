@@ -51,23 +51,23 @@ const NavBar: React.FC<NavBarProps> = ({
 
     return (
         <div
-            className="fixed w-full flex items-center border-b bg-gray-50 px-3 pt-2 pb-4 rounded-b-[15]"
+            className="fixed w-full flex  border-b bg-gray-50 px-3 pt-2 pb-4 rounded-b-[15]"
             style={{
                 boxShadow: `0 1.2px 3px 0 rgba(0,0,0,0.2)`,
             }}
         >
-            <div>
-                <MobileSidebar
-                    chatrooms={chatrooms}
-                    createChatroom={createChatroom}
-                    deleteChatroom={deleteChatroom}
-                    renameChatroom={renameChatroom}
-                />
-            </div>
+            <div className="flex relative items-center w-full mx-auto px-1">
+                <div className="pt-2 px-2">
+                    <MobileSidebar
+                        chatrooms={chatrooms}
+                        createChatroom={createChatroom}
+                        deleteChatroom={deleteChatroom}
+                        renameChatroom={renameChatroom}
+                    />
+                </div>
 
-            <div className="flex-1 flex justify-center sm:justify-start  ">
                 <button
-                    className="pl-3"
+                    className="flex-1 flex justify-center md:justify-start"
                     onClick={() => window.location.replace("/")}
                 >
                     <div className="flex items-center">
@@ -79,13 +79,14 @@ const NavBar: React.FC<NavBarProps> = ({
                         />
                     </div>
                 </button>
-                <div className="flex-1 flex justify-center text-[20px] pt-2">
+
+                <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2 text-[20px] pt-2">
                     {activeChatroomName || ""}
                 </div>
 
                 {isLoggedIn ? (
                     <button
-                        className="absolute right-8 pt-3"
+                        className="absolute right-8 pt-1"
                         onClick={handleLogout}
                     >
                         Logout

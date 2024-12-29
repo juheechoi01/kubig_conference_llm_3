@@ -99,7 +99,7 @@ const SideBar: React.FC<SideBarProps> = ({
 
     return (
         <div
-            className="h-full hidden sm:flex mt-[10] rounded-r-lg"
+            className="h-full hidden md:flex mt-[10] rounded-r-lg"
             id="sidebar"
         >
             <div

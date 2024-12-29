@@ -72,7 +72,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({
 
     return (
         <Sheet open={isExpanded} onOpenChange={setIsExpanded}>
-            <SheetTrigger className="sm:hidden">
+            <SheetTrigger className="md:hidden">
                 <Menu size={28} />
             </SheetTrigger>
 

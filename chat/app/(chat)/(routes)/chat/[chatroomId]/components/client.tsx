@@ -131,7 +131,7 @@ const ChatClient = ({ chatroom }: ChatClientProps) => {
 
     return (
         <div className="flex flex-col h-full mx-4 flex-1">
-            <div className="lg:pl-20 flex flex-col align-middle items-center justify-center -z-40 absolute inset-0">
+            <div className="flex flex-col align-middle items-center justify-center -z-40 absolute inset-0">
                 <Image
                     src="/images/nararag-logo.png"
                     alt="NaraRAG"

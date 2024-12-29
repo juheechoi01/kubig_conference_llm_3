@@ -91,7 +91,7 @@ const ChatMessage = ({
                     content,
                     chatroomId,
                     chatroomName,
-                    userId
+                    userId,
                 }),
             });
 
@@ -113,12 +113,52 @@ const ChatMessage = ({
     };
 
     const formatContent = (text: string) => {
-        return text.split("\n").map((line, index) => (
-            <span key={index}>
-                {line}
-                <br />
-            </span>
-        ));
+        text = text.replace(/(\(출처:\s*https?:\/\/)/g, "\n$1");
+
+        const lines = text.split("\n");
+
+        const urlRegex = /(https?:\/\/[^\s)]+)/gi;
+
+        return lines.map((line, lineIndex) => {
+            const elements: (string | JSX.Element)[] = [];
+
+            let lastIndex = 0;
+            let match;
+            while ((match = urlRegex.exec(line)) !== null) {
+                const url = match[0];
+                const start = match.index;
+                const end = start + url.length;
+
+                if (start > lastIndex) {
+                    elements.push(line.slice(lastIndex, start));
+                }
+
+                elements.push(
+                    <a
+                        key={`link-${lineIndex}-${start}`}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline"
+                    >
+                        {url}
+                    </a>
+                );
+
+                lastIndex = end;
+            }
+
+            if (lastIndex < line.length) {
+                elements.push(line.slice(lastIndex));
+            }
+
+            return (
+                <span key={lineIndex}>
+                    {elements}
+                    <br />
+                </span>
+            );
+        });
     };
 
     return (
@@ -132,7 +172,7 @@ const ChatMessage = ({
             {role !== "user" && <BotAvatar />}
             <div
                 className={cn(
-                    "mt-[3] rounded-md px-5 py-4 max-w-lg text-sm bg-gradient-to-b from-[#dedfff] via-[#e9eaff] to-[#f8f9fd] transition-all duration-300 shadow-md",
+                    "mt-[3] rounded-md px-5 py-4 max-w-lg text-sm bg-gradient-to-b from-[#dedfff] via-[#e9eaff] to-[#f8f9fd] transition-all duration-300 shadow-md break-words",
                     "animate-expand-height"
                 )}
             >
