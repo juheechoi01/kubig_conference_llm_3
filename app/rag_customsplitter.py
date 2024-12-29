@@ -104,7 +104,7 @@ qa_prompt = ChatPromptTemplate.from_messages(
     [
         ('system', qa_system_prompt),
         MessagesPlaceholder('chat_history'),
-        ('human','{input}'+' 답변은 구체적으로 최신 정보부터 시간의 흐름에 따라 작성해줘. 그리고 답변할 때 metadata에 있는 source 링크를 함께 제공해줘.'),
+        ('human','{input}'+' 답변은 구체적으로 최신 정보부터 시간의 흐름에 따라 작성해줘.'),
     ]
 )
 
